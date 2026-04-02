@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: Lato, Arial, sans-serif; background: #f4f1ff; min-height: 100vh; padding: 32px 16px; }
+  .wrap { max-width: 640px; margin: 0 auto; }
+  .card-dark { background: #100636; border-radius: 12px; padding: 28px; margin-bottom: 20px; }
+  .card-white { background: #fff; border-radius: 12px; padding: 28px; margin-bottom: 16px; }
+  .card-purple { background: #512FC9; border-radius: 12px; padding: 20px; margin-bottom: 16px; }
+  .label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.14em; color: #00DDDD; margin-bottom: 8px; }
+  .title { font-size: 20px; font-weight: 700; color: #fff; margin-bottom: 16px; }
+  .progress-bg { background: rgba(255,255,255,0.1); border-radius: 99px; height: 6px; margin-bottom: 6px; }
+  .progress-bar { background: #00DDDD; border-radius: 99px; height: 6px; transition: width 0.3s ease; }
+  .progress-text { font-size: 12px; color: rgba(255,255,255,0.6); }
+  .question { font-size: 17px; font-weight: 700; color: #100636; line-height: 1.5; margin-bottom: 24px; }
+  .option { border: 2px solid #e8e4f8; border-radius: 8px; padding: 14px 16px; cursor: pointer; background: #fff; font-size: 14px; color: #100636; line-height: 1.5; margin-bottom: 12px; transition: all 0.15s ease; }
+  .option:hover { border-color: #A6A2FF; }
+  .option.selected { border-color: #512FC9; background: #f4f1ff; }
+  .btn { background: #C8C8FF; color: #fff; border: none; border-radius: 8px; padding: 12px 28px; font-size: 14px; font-weight: 700; cursor: not-allowed; font-family: Lato, Arial, sans-serif; float: right; transition: background 0.15s ease; }
+  .btn.active { background: #512FC9; cursor: pointer; }
+  .clearfix::after { content: ""; display: table; clear: both; }
+  .emoji { font-size: 48px; text-align: center; margin-bottom: 12px; }
+  .result-label { font-size: 11px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: #00DDDD; margin-bottom: 12px; text-align: center; }
+  .result-headline { font-size: 24px; font-weight: 700; color: #fff; margin-bottom: 16px; line-height: 1.3; text-align: center; }
+  .result-desc { font-size: 15px; color: rgba(255,255,255,0.8); line-height: 1.7; text-align: center; }
+  .section-label { font-size: 11px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: #512FC9; margin-bottom: 14px; }
+  .item { display: flex; gap: 12px; margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid #f4f1ff; }
+  .item:last-child { margin-bottom: 0; padding-bottom: 0; border-bottom: none; }
+  .dot { width: 6px; height: 6px; border-radius: 50%; background: #00DDDD; flex-shrink: 0; margin-top: 7px; }
+  .item-text { font-size: 14px; color: #100636; line-height: 1.6; }
+  .item-text a { color: #512FC9; font-weight: 700; text-decoration: none; }
+  .team-card { background: #100636; border-radius: 12px; padding: 20px; margin-bottom: 16px; display: flex; align-items: flex-start; gap: 16px; }
+  .team-text { font-size: 14px; color: rgba(255,255,255,0.85); line-height: 1.6; }
+  .team-text strong { color: #fff; }
+  .team-text a { color: #00DDDD; font-weight: 700; text-decoration: none; }
+  .retake { display: block; text-align: center; margin-top: 4px; }
+  .retake button { background: transparent; border: 1px solid #C8C8FF; color: #512FC9; border-radius: 8px; padding: 10px 24px; font-size: 13px; cursor: pointer; font-family: Lato, Arial, sans-serif; }
+  .hidden { display: none; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- Question Screen -->
+  <div id="q-screen">
+    <div class="card-dark">
+      <div class="label">AI Fluency Self-Assessment</div>
+      <div class="title">Find your starting point on Launch.</div>
+      <div class="progress-bg"><div class="progress-bar" id="progress" style="width:0%"></div></div>
+      <div class="progress-text" id="progress-text">Question 1 of 7</div>
+    </div>
+    <div class="card-white">
+      <div class="question" id="q-text"></div>
+      <div id="options"></div>
+    </div>
+    <div class="clearfix">
+      <button class="btn" id="next-btn" onclick="nextQ()">Next →</button>
+    </div>
+  </div>
+
+  <!-- Results Screen -->
+  <div id="r-screen" class="hidden">
+    <div class="card-dark">
+      <div class="emoji" id="r-emoji"></div>
+      <div class="result-label">Your Results</div>
+      <div class="result-headline" id="r-headline"></div>
+      <div class="result-desc" id="r-desc"></div>
+    </div>
+    <div id="r-sections"></div>
+    <div class="team-card">
+      <div style="font-size:24px">🎯</div>
+      <div class="team-text"><strong>Don't forget your team's page.</strong> Head to the "Explore Curated Content by Team" section in <a href="https://goteleport.highspot.com/spots/698a4f26fea5e3b616b461d3" target="_blank">Launch in Highspot</a> to find resources built specifically around your function's needs and use cases.</div>
+    </div>
+    <div class="retake"><button onclick="restart()">Retake the assessment</button></div>
+  </div>
+
+</div>
+<script>
+var LAUNCH = "https://goteleport.highspot.com/spots/698a4f26fea5e3b616b461d3";
+var L = '<a href="' + LAUNCH + '" target="_blank">Launch in Highspot</a>';
+
+var questions = [
+  { q: "How would you describe your current relationship with AI tools?", opts: [
+    { t: "I haven't really started using them yet", s: 0 },
+    { t: "I've tried a few things but don't use them consistently", s: 1 },
+    { t: "I use AI tools regularly as part of my work", s: 2 },
+    { t: "AI tools are central to how I get work done", s: 3 }
+  ]},
+  { q: "When you encounter a new or complex work problem, what's your first instinct?", opts: [
+    { t: "Work through it manually or ask a colleague", s: 0 },
+    { t: "I sometimes think to use AI, but don't always leverage it", s: 1 },
+    { t: "I regularly reach for AI tools as part of my problem-solving", s: 2 },
+    { t: "AI is just part of how I think through problems now", s: 3 }
+  ]},
+  { q: "How comfortable are you writing prompts to get useful outputs from AI?", opts: [
+    { t: "Not sure where to start", s: 0 },
+    { t: "I can get basic outputs but they're often not quite right", s: 1 },
+    { t: "I can write solid prompts and iterate to get what I need", s: 2 },
+    { t: "I write detailed, structured prompts and get reliable, high-quality results", s: 3 }
+  ]},
+  { q: "How do you think about reviewing AI-generated outputs before using them?", opts: [
+    { t: "I'm not sure what to watch out for", s: 0 },
+    { t: "I know I should review outputs but don't always do it carefully", s: 1 },
+    { t: "I consistently review and edit AI outputs before using them", s: 2 },
+    { t: "I have a strong sense of when to trust AI and when to verify or not use it", s: 3 }
+  ]},
+  { q: "Have you used AI tools to improve or automate any part of your workflow?", opts: [
+    { t: "Not yet", s: 0 },
+    { t: "I've experimented a little but nothing consistent", s: 1 },
+    { t: "Yes, I've meaningfully improved specific parts of how I work", s: 2 },
+    { t: "Yes, I've redesigned significant parts of my workflow around AI", s: 3 }
+  ]},
+  { q: "How do you stay current on AI tools and what's possible?", opts: [
+    { t: "I don't really follow this space yet", s: 0 },
+    { t: "I pick things up when they come across my feed", s: 1 },
+    { t: "I actively follow developments relevant to my work", s: 2 },
+    { t: "I explore new tools proactively and share what I find with my team", s: 3 }
+  ]},
+  { q: "Thinking about your team's work specifically — how much have you explored what AI can do for your function?", opts: [
+    { t: "I haven't really thought about it in terms of my specific role yet", s: 0 },
+    { t: "I have a general sense but haven't gone deep on my function's use cases", s: 1 },
+    { t: "I've found some practical applications that work well for my team's work", s: 2 },
+    { t: "I'm actively finding and sharing use cases specific to my function", s: 3 }
+  ]}
+];
+
+var results = [
+  { max: 5, emoji: "🌱", headline: "Start with the fundamentals.", desc: "The best place to start is building a foundation — getting comfortable with the basics and developing a consistent habit of using AI in your day-to-day work.", sections: [
+    { label: "Begin here", items: [
+      'Search "AI Fluency" in ' + L + ' for the Insight Partners AI Fluency Program — this is your starting point',
+      'Search "Beginner AI" in ' + L + ' for introductory resources across topics',
+      'Join a Getting Started with Claude workshop from the AI Workshop Series in ' + L,
+      'Search "Claude" in ' + L + ' to find introductory guides and tutorials',
+      'Search "Responsible AI" in ' + L + ' — understanding how to use AI well is part of the foundation',
+    ]},
+    { label: "Also worth exploring", items: [
+      'Anthropic Academy in External Upskilling Resources in ' + L + ' — free, self-paced, and beginner-friendly',
+      'Head to your team\'s curated page in ' + L + ' to see resources tailored to your function',
+    ]}
+  ]},
+  { max: 12, emoji: "⚡", headline: "Build consistency and go deeper.", desc: "You've got the basics down. The next step is making AI a more reliable part of your daily work and developing stronger skills in the areas most relevant to your role.", sections: [
+    { label: "Recommended next steps", items: [
+      'Search "Prompting" in ' + L + ' — there\'s a strong collection of courses to sharpen your prompt writing',
+      'Search "Writing" in ' + L + ' for resources on using AI to communicate and produce better work faster',
+      'Search "Workflow" in ' + L + ' for practical examples of how to improve the way you work',
+      'Search "Internal Use Case" in ' + L + ' for examples of how Teleporters are actually using AI',
+      'Head to your team\'s curated page in ' + L + ' for resources tailored to your specific function',
+    ]},
+    { label: "Also worth exploring", items: [
+      'Search "Data Analysis" in ' + L + ' if analyzing information is part of your role',
+      'Search "Automation" in ' + L + ' to start thinking about how to reduce manual work',
+      'Search "Responsible AI" in ' + L + ' to build sound judgment around AI use',
+      'Anthropic Academy and Notion Academy in External Upskilling Resources in ' + L,
+    ]}
+  ]},
+  { max: 99, emoji: "🚀", headline: "Go deeper and multiply your impact.", desc: "You're already working in an AI-fluent way. The opportunity now is to go further — tackling more advanced capabilities and helping the people around you level up.", sections: [
+    { label: "Where to go next", items: [
+      'Search "Advanced AI" in ' + L + ' for technical deep-dives across topics',
+      'Search "Agents" in ' + L + ' — explore agentic workflows and how to build with Claude',
+      'Search "Automation" in ' + L + ' to find ways to scale your impact further',
+      'Search "Claude Code" in ' + L + ' for advanced technical resources',
+      'Search "MCP" in ' + L + ' for Model Context Protocol resources',
+    ]},
+    { label: "Also worth exploring", items: [
+      'Search "Generative AI" in ' + L + ' for content on advanced gen AI applications',
+      'Search "Workflow" in ' + L + ' — at this level, redesigning how your team works is the opportunity',
+      'AWS Skill Builder in External Upskilling Resources in ' + L + ' — advanced Bedrock and agent content',
+      'Interested in contributing to the AI Workshop Series? Reach out to Kathleen.',
+    ]}
+  ]}
+];
+
+var cur = 0, score = 0, sel = null;
+
+function render() {
+  var q = questions[cur];
+  document.getElementById("q-text").innerHTML = q.q;
+  document.getElementById("progress").style.width = Math.round((cur / questions.length) * 100) + "%";
+  document.getElementById("progress-text").innerHTML = "Question " + (cur + 1) + " of " + questions.length;
+  document.getElementById("next-btn").innerHTML = (cur + 1 === questions.length) ? "See my results →" : "Next →";
+  var html = "";
+  q.opts.forEach(function(o, i) {
+    html += '<div class="option" id="opt-' + i + '" onclick="pick(' + i + ', ' + o.s + ')">' + o.t + '</div>';
+  });
+  document.getElementById("options").innerHTML = html;
+  sel = null;
+  document.getElementById("next-btn").className = "btn";
+}
+
+function pick(i, s) {
+  sel = s;
+  document.querySelectorAll(".option").forEach(function(el) { el.classList.remove("selected"); });
+  document.getElementById("opt-" + i).classList.add("selected");
+  document.getElementById("next-btn").className = "btn active";
+}
+
+function nextQ() {
+  if (sel === null) return;
+  score += sel;
+  if (cur + 1 < questions.length) { cur++; render(); }
+  else showResults();
+}
+
+function showResults() {
+  document.getElementById("q-screen").classList.add("hidden");
+  document.getElementById("r-screen").classList.remove("hidden");
+  var res = results.find(function(r) { return score <= r.max; });
+  document.getElementById("r-emoji").innerHTML = res.emoji;
+  document.getElementById("r-headline").innerHTML = res.headline;
+  document.getElementById("r-desc").innerHTML = res.desc;
+  var html = "";
+  res.sections.forEach(function(sec) {
+    html += '<div class="card-white"><div class="section-label">' + sec.label + '</div>';
+    sec.items.forEach(function(item) {
+      html += '<div class="item"><div class="dot"></div><div class="item-text">' + item + '</div></div>';
+    });
+    html += '</div>';
+  });
+  document.getElementById("r-sections").innerHTML = html;
+}
+
+function restart() {
+  cur = 0; score = 0; sel = null;
+  document.getElementById("r-screen").classList.add("hidden");
+  document.getElementById("q-screen").classList.remove("hidden");
+  render();
+}
+
+render();
+</script>
+</body>
+</html>
